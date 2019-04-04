@@ -5,9 +5,9 @@ class User{
 	String userName;
 	String pass;
     // ArrayList<Transaction> passBook;
-    int mySecret;
-    int publicsSecret;
-	public User(String userName,String pass, int mySecret)
+    BigInteger mySecret;
+    BigInteger publicsSecret;
+	public User(String userName,String pass, BigInteger mySecret)
 	{
 		this.userName=userName;
         this.pass=pass;
@@ -17,12 +17,12 @@ class User{
 	//create a func. to make a block
 	//create a func. to send a block across the network
 	//create a func. to verify a transaction
-	boolean verifyTransaction(int prime, int generator){
+	boolean verifyTransaction(BigInteger prime, BigInteger generator){
 	    Group g = new Group();
         System.out.println("Safe prime is "+g.prime+" the generator is "+g.generator);
         prime = g.prime;
         generator = g.generator;
-        this.publicsSecret = Group.FastExpModP(generator,mySecret,prime);
+        this.publicsSecret = generator.modPow(mySecret,prime);
 		return true;
 	}
 	static String getMd5(String input)
