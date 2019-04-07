@@ -95,7 +95,7 @@ class ReadThread implements Runnable
 				Message m = new Message();
 				socket.receive(datagram); 
 				ArrayList<Object> message = m.unWrapMessage(buffer); //new String(buffer,0,datagram.getLength(),"UTF-8"); 
-				// if(!message.startsWith(Communication.name)) 
+				// if(!message.startsWith(Communication.name)) dislplay only others' messages
 				System.out.println("recieved by "+name+" "+message); 
 
 			} 
