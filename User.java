@@ -1,6 +1,6 @@
 import java.util.*;
 import java.math.BigInteger;
-import java.security.*;
+// import java.security.*;/
 class User{
     String userName;
 	// String pass;
@@ -9,28 +9,31 @@ class User{
     BigInteger privateKey;
     BigInteger publicKey;
     Group group;
-    Blockchain blockchain;
-	public User(String userName){
+	Blockchain blockchain;
+	boolean firstUser;
+	Block currentBlock;
+	public User(String userName, boolean first){
         this.userName = userName;
         this.group = new Group();
-        // this.pass=pass;
+		// this.pass=pass;
+		this.firstUser = first;
         this.privateKey = new BigInteger(""+new Random().nextInt(10000));
         this.publicKey = privateKey.modPow(privateKey, group.prime);
-        blockchain = new Blockchain(4, 5);
+		blockchain = new Blockchain(4, 5);
         //TODO
         //publish this to the network
         //recieve the current usernameToPublicKey
         //add yourself to the network
     }
 
-    void createTransaction(){
-
+    void createTransaction(int idNo, String crime){
+		Transaction temp = new Transaction(idNo, crime);
     }
 
     
     boolean verifyTransaction(){
-        User verifier = new User("hello1", "world1", new BigInteger("1234") );
-		User prover = new User("hello2", "world2", new BigInteger("6789") );
+        //User verifier = new User("hello1", "world1", new BigInteger("1234") );
+		//User prover = new User("hello2", "world2", new BigInteger("6789") );
 		ArrayList<String> channel = new ArrayList<>();
 		Group group = new Group();
 		String md5hash = "fc5e038d38a57032085441e7fe7010b0";
@@ -52,7 +55,7 @@ class User{
 		System.out.println("Alpha beta gamma are "+alpha+" "+beta+" "+gamma);
         
 		String temp = ""+alpha.toString()+beta.toString()+gamma.toString();
-		String tempMd5 = User.getMd5(temp);
+		String tempMd5 = getMd5(temp);
 		System.out.println("tempMd5 is "+tempMd5);
         
 		BigInteger c = new BigInteger(tempMd5,16);
@@ -72,7 +75,7 @@ class User{
 		BigInteger beta1 = new BigInteger(channel.get(2));
 		BigInteger gamma1 = new BigInteger(channel.get(3));
 		String temp2 = ""+alpha1.toString()+beta1.toString()+gamma1.toString();
-		String temp2md5 = User.getMd5(temp2);
+		String temp2md5 = getMd5(temp2);
 		System.out.println("temp2md5 is "+temp2md5);
 		BigInteger c1 = new BigInteger(temp2md5,16);
         
@@ -101,11 +104,30 @@ class User{
         
 		if(t1.equals(t3) ) System.out.println("It is true");
 		// else System.out.println("Va fail");
+		return true;
     }
+	/*
+	Needs refactoring
 
     int mineBlock(){
-
+		int nonce = 0;
+		String target = new String(new char[difficulty]).replace('\0','0');
+		while(!hash.substring(0,difficulty).equals(target)){
+			nonce++;
+			hash = calculateHash();
+		}
+		System.out.println("Kar-ching: "+hash);
+		return nonce;
     }
+
+	String calculateHash(int nonce){
+        String calculatedHash = StringUtil.applySha256(previousHash + Long.toString(new Date().getTime()) + Integer.toString(nonce) + data);
+        return calculatedHash;
+    }
+`	*/
+	static String getMd5(String string){
+		return string;
+	}
 
 	//kahin to user call karega transaction with speed
 	//create a func. to make a block
