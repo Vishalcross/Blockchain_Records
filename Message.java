@@ -81,7 +81,7 @@ class Message{
      * 
     */
 
-    byte[] transactionContainer(String sender, Transaction transaction, String s, String alpha, String beta, String gamma) throws IOException {
+    byte[] transactionContainer(String sender, Transaction transaction, BigInteger s, BigInteger alpha, BigInteger beta, BigInteger gamma) throws IOException {
         // ArrayList<Object> message = new ArrayList<>();
         this.message.add(transactionContainer);
         this.message.add(sender);
