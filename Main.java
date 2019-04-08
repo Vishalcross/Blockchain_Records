@@ -127,7 +127,7 @@ class Main{
 					 * 
 					 * If a transaction was sent to verification, it will be cancelled and resent
 					 * 
-					 * If a transaction was verified but now added to the buffer, do that before sending
+					 * If a transaction was verified but not added to the buffer, do that before sending
 					 * the userTable and buffer and blockchain
 					 * 
 					 * If mining is ongoing then the new user must wait before they can get started
