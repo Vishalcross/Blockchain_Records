@@ -138,6 +138,19 @@ class User{
 		return nonce;
 	}
 
+	boolean verifyMining(int nonce){
+		String target = new String(new char[blockchain.difficulty]).replace('\0','0');
+		String data = "";
+		for(int i=0;i<currentBuffer.size();i++){
+			data += currentBuffer.get(i).getString();
+		}
+		String hash = StringUtil.applySha256(blockchain.getLastHash() + Integer.toString(nonce) + data);
+		if(hash.substring(0,blockchain.difficulty).equals(target)){
+			return true;
+		}
+		return false;
+	}
+
 	void printPassbook(){
 		for(int i=0;i<passBook.size();i++){
 			System.out.println("ID: "+passBook.get(i).gunah.idNo+"\nCrime: "+passBook.get(i).gunah.crime);
