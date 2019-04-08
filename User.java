@@ -2,39 +2,44 @@ import java.util.*;
 import java.math.BigInteger;
 // import java.security.*;/
 class User{
-    String userName;
+    String username;
 	// String pass;
-    HashMap<String,BigInteger> usernameToPublicKey;
+    HashMap<String,ArrayList<BigInteger>> usernameToPublicKey;
     ArrayList<Transaction> passBook;
+	ArrayList<Transaction> currentBuffer;
     BigInteger privateKey;
     BigInteger publicKey;
     Group group;
 	Blockchain blockchain;
 	boolean firstUser;
-	Block currentBlock;
-	public User(String userName, boolean first){
-        this.userName = userName;
+	public User(String username, boolean first){
+        this.username = username;
         this.group = new Group();
 		// this.pass=pass;
 		this.firstUser = first;
         this.privateKey = new BigInteger(""+new Random().nextInt(10000));
-        this.publicKey = privateKey.modPow(privateKey, group.prime);
-		blockchain = new Blockchain(4, 5);
-        //TODO
-        //publish this to the network
-        //recieve the current usernameToPublicKey
-        //add yourself to the network
+		this.publicKey = this.group.generator.modPow(privateKey, group.prime);
+		if(first){
+			//handle the base case
+			this.blockchain = new Blockchain(4, 5); //initialise the blockchain
+			this.usernameToPublicKey = new HashMap<>();
+			usernameToPublicKey.put(username,new ArrayList<BigInteger>());
+			usernameToPublicKey.get(username).add(this.group.generator);
+			usernameToPublicKey.get(username).add(this.group.prime);
+			usernameToPublicKey.get(username).add(publicKey);
+		}
     }
 
-    void createTransaction(int idNo, String crime){
+    Transaction createTransaction(int idNo, String crime){
 		Transaction temp = new Transaction(idNo, crime);
+		return temp;
     }
 
     
     boolean verifyTransaction(){
         //User verifier = new User("hello1", "world1", new BigInteger("1234") );
 		//User prover = new User("hello2", "world2", new BigInteger("6789") );
-		ArrayList<String> channel = new ArrayList<>();
+		// ArrayList<String> channel = new ArrayList<>();
 		Group group = new Group();
 		String md5hash = "fc5e038d38a57032085441e7fe7010b0";
 		BigInteger m = new BigInteger(md5hash, 16);

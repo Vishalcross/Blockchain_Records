@@ -10,11 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 class Message{
-    /** Add a user
-     * share your public key (generator, p, generator^privateKey (mod p))
-     * and username
-     * in one class
-     */
     private ArrayList<Object> message;
     static final int intro = 1;
     static final int welcome = 2;
@@ -24,11 +19,11 @@ class Message{
     static final int hashMined = 6;
     static final int hashVerified = 7;
     static final int newBlockchain = 8;
-
+    
     Message(){
         this.message = new ArrayList<>();
     }
-
+    
     byte[] wrapMessage() throws IOException{
         try(ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutput out = new ObjectOutputStream(bos)){
@@ -37,36 +32,43 @@ class Message{
             return bos.toByteArray();
         }
     }
-
+    
     ArrayList<Object> unWrapMessage(byte[] message) throws IOException, ClassNotFoundException{
         try (ByteArrayInputStream bis = new ByteArrayInputStream(message);
-         ObjectInput in = new ObjectInputStream(bis)) {
+        ObjectInput in = new ObjectInputStream(bis)) {
             return (ArrayList<Object>)in.readObject();
         } 
     }
+    
+    /** Add a user
+     * share your public key (generator, p, generator^privateKey (mod p))
+     * and username
+     * in one class
+     */
 
-
-    byte[] introduceUser(String username, BigInteger generator, BigInteger prime, BigInteger publicKey) throws IOException {
+    byte[] introduceUser(String sender, BigInteger generator, BigInteger prime, BigInteger publicKey) throws IOException {
         // ArrayList<Object> this.message = new ArrayList<>();
         this.message.add(intro);
-        this.message.add(username);
+        this.message.add(sender);
         this.message.add(generator);
         this.message.add(prime);
         this.message.add(publicKey);
         return wrapMessage();
     }
-    //types of messages
 
     /** Share userTable and current blockchain
      * First user shares the userTable and the current blockchain
      * put them in one message
      */
 
-    byte[] welcomeUser(HashMap<String,BigInteger> userTable, ArrayList<Block> blockchain) throws IOException{
+    byte[] welcomeUser(String reciever, HashMap<String,BigInteger> userTable, ArrayList<Block> blockchain, ArrayList<Transaction> currentBuffer) throws IOException{
         // ArrayList<Object> message = new ArrayList<>();
         this.message.add(welcome);
+        // this.message.add(sender);
+        this.message.add(reciever);
         this.message.add(userTable);
         this.message.add(blockchain);
+        this.message.add(currentBuffer);
         return wrapMessage();
     } 
 
@@ -79,11 +81,11 @@ class Message{
      * 
     */
 
-    byte[] transactionContainer(Transaction transaction, String username, String s, String alpha, String beta, String gamma) throws IOException {
+    byte[] transactionContainer(String sender, Transaction transaction, String s, String alpha, String beta, String gamma) throws IOException {
         // ArrayList<Object> message = new ArrayList<>();
         this.message.add(transactionContainer);
+        this.message.add(sender);
         this.message.add(transaction);
-        this.message.add(username);
         this.message.add(s);
         this.message.add(alpha);
         this.message.add(beta);
@@ -94,13 +96,14 @@ class Message{
 
     /** Transaction reply
      * username (sender address) , VALID
-     */
+    */
     
-    byte[] transactionVerificationReply(boolean validity, String username) throws IOException {
+    byte[] transactionVerificationReply(String sender, String reciever, boolean validity) throws IOException {
         // ArrayList<Object> message = new ArrayList<>();
         this.message.add(verificationReply);
+        this.message.add(sender);
+        this.message.add(reciever);
         this.message.add(validity);
-        this.message.add(username);
         return wrapMessage();
     }
 
@@ -109,8 +112,9 @@ class Message{
      * PUT, transaction
      */
 
-    byte[] storeTransactionNow(Transaction transaction) throws IOException {
+    byte[] storeTransactionNow(String sender, Transaction transaction) throws IOException {
         this.message.add(storeTransaction);
+        this.message.add(sender);
         this.message.add(transaction);
         return wrapMessage();
     }
@@ -119,10 +123,10 @@ class Message{
      * send nonce, username (return address)
      */
 
-    byte[] hashMinedInfo(int nonce, String username) throws IOException{
+    byte[] hashMinedInfo(String sender, int nonce) throws IOException{
         this.message.add(hashMined);
+        this.message.add(sender);
         this.message.add(nonce);
-        this.message.add(username);
         return wrapMessage();
     }
 
@@ -130,10 +134,11 @@ class Message{
      * send YES, username (sender's address)
      */
 
-    byte[] hashVerified(boolean validity, String username) throws IOException{
+    byte[] hashVerified(String sender, String reciever, boolean validity) throws IOException{
         this.message.add(hashVerified);
+        this.message.add(sender);
+        this.message.add(reciever);
         this.message.add(validity);
-        this.message.add(username);
         return wrapMessage();
     }
 
@@ -141,8 +146,9 @@ class Message{
      * send blockchain with the transactions embedded
      */
 
-    byte[] newBlockchain(Blockchain blockchain) throws IOException{
+    byte[] newBlockchain(String sender, Blockchain blockchain) throws IOException{
         this.message.add(newBlockchain);
+        this.message.add(sender);
         this.message.add(blockchain);
         return wrapMessage();
     }
