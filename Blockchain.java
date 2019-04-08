@@ -4,10 +4,12 @@ class Blockchain implements Serializable{
 	private static final long serialVersionUID = 6008132331540391693L;
 	ArrayList<Block> blockchain;
 	int difficulty;
+	int limit;
 	public Blockchain(int difficulty, int limit){
 		this.difficulty = difficulty;
 		blockchain = new ArrayList<>();
-		Block b = new Block(limit);
+		this.limit = limit;
+		Block b = new Block(this.limit);
 		b.previousHash = "0";
 		b.hash = StringUtil.applySha256("GENESIS BLOCK");
 		blockchain.add(b);
@@ -29,7 +31,7 @@ class Blockchain implements Serializable{
 				System.out.println("Previous hash mismatch");
 				return false;
 			}
-			if(!current.hash.equals(current.calculateHash(current.nonce))){
+			if(!current.hash.equals(current.calculateHash(previous.hash,current.nonce))){
 				System.out.println("Hashes not equal, the blockchain is invalid");
 				return false;
 			}

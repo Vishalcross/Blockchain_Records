@@ -62,7 +62,7 @@ class Message{
      * put them in one message
      */
 
-    byte[] welcomeUser(String reciever, HashMap<String,ArrayList<BigInteger>> userTable, Blockchain blockchain, ArrayList<Transaction> currentBuffer) throws IOException{
+    byte[] welcomeUser(String reciever, HashMap<String,ArrayList<BigInteger>> userTable, Blockchain blockchain, Block currentBuffer) throws IOException{
         // ArrayList<Object> message = new ArrayList<>();
         this.message.add(welcome);
         // this.message.add(sender);
@@ -135,11 +135,12 @@ class Message{
      * send YES, username (sender's address)
      */
 
-    byte[] hashVerified(String sender, String reciever, boolean validity) throws IOException{
+    byte[] hashVerified(String sender, String reciever, boolean validity, int nonce) throws IOException{
         this.message.add(hashVerified);
         this.message.add(sender);
         this.message.add(reciever);
         this.message.add(validity);
+        this.message.add(nonce);
         return wrapMessage();
     }
 

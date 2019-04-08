@@ -7,7 +7,7 @@ class User{
 	// String pass;
     HashMap<String,ArrayList<BigInteger>> usernameToPublicKey;
     ArrayList<Transaction> passBook;
-	ArrayList<Transaction> currentBuffer;
+	Block currentBuffer;
     BigInteger privateKey;
     BigInteger publicKey;
     Group group;
@@ -28,7 +28,7 @@ class User{
 			usernameToPublicKey.get(username).add(this.group.generator);
 			usernameToPublicKey.get(username).add(this.group.prime);
 			usernameToPublicKey.get(username).add(this.publicKey);
-			currentBuffer = new ArrayList<>();
+			currentBuffer = new Block(5);
 		}
     }
 
@@ -126,8 +126,8 @@ class User{
 		
 		String target = new String(new char[blockchain.difficulty]).replace('\0','0');
 		String data = "";
-		for(int i=0;i<currentBuffer.size();i++){
-			data += currentBuffer.get(i).getString();
+		for(int i=0;i<currentBuffer.block.size();i++){
+			data += currentBuffer.block.get(i).getString();
 		}
 		String hash = "";
 		while(!hash.substring(0,blockchain.difficulty).equals(target)){
@@ -141,8 +141,8 @@ class User{
 	boolean verifyMining(int nonce){
 		String target = new String(new char[blockchain.difficulty]).replace('\0','0');
 		String data = "";
-		for(int i=0;i<currentBuffer.size();i++){
-			data += currentBuffer.get(i).getString();
+		for(int i=0;i<currentBuffer.block.size();i++){
+			data += currentBuffer.block.get(i).getString();
 		}
 		String hash = StringUtil.applySha256(blockchain.getLastHash() + Integer.toString(nonce) + data);
 		if(hash.substring(0,blockchain.difficulty).equals(target)){

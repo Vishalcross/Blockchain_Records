@@ -1,7 +1,5 @@
 import java.util.ArrayList;
-import java.util.Date;
 import java.io.Serializable;
-import java.security.MessageDigest;
 class Block implements Serializable{
 	private static final long serialVersionUID = 4096183216294081308L;
 	ArrayList<Transaction> block;
@@ -16,12 +14,11 @@ class Block implements Serializable{
 	public void addTransacion(Transaction transaction){
 		block.add(transaction);
 	}
-	public String calculateHash(int nonce){
+	public String calculateHash(String previousHash, int nonce){
 		String h = "";
-		this.nonce = nonce;
 		for(int i=0;i<block.size();i++){
 			h += block.get(i).gunah.crime;
 		}
-		return StringUtil.applySha256(previousHash + Long.toString(new Date().getTime()) + Integer.toString(nonce) + h);
+		return StringUtil.applySha256(previousHash + Integer.toString(nonce) + h);
 	}
 }
