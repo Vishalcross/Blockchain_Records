@@ -28,6 +28,7 @@ class User{
 			usernameToPublicKey.get(username).add(this.group.generator);
 			usernameToPublicKey.get(username).add(this.group.prime);
 			usernameToPublicKey.get(username).add(this.publicKey);
+			currentBuffer = new ArrayList<>();
 		}
     }
 

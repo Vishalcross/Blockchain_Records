@@ -4,6 +4,11 @@ import java.net.*;
 import java.io.*;
 import java.math.BigInteger;
 class Main{
+	public static String name;
+	public static boolean newuser = false;
+	// public static boolean welcome = false; 
+	static boolean running = true;
+	static ArrayList<Object> channel;
 	public static void main(String[] args) {
 		try
 			{ 
@@ -21,23 +26,28 @@ class Main{
 				String first = scan.nextLine();
 				User currentUser = new User(uname,first.compareTo("yes")==0?true:false);
 				System.out.println("Welcome " +uname+", would you like to manually enter the criminal records or have a random insertion\nPress y for manual input and n for random");
+				name = uname;
 				char choice = (scan.nextLine()).charAt(0);
-
 				MulticastSocket socket = new MulticastSocket(port); 
-			
+				
 				// Since we are deploying 
 				socket.setTimeToLive(0); 
 				//this on localhost only (For a subnet set it as 1) 
 				
-				socket.joinGroup(group); 
+				socket.joinGroup(group);
+				// ReadThread rt = new ReadThread();
 				Thread t = new Thread(new ReadThread(name,socket,group,port)); 
 			
 				// Spawn a thread for reading messages 
 				t.start();
 				// sent to the current group 
+				Message m = new Message();
+				//sending hi
+				byte[] intro = m.introduceUser(uname, currentUser.group.generator, currentUser.group.prime, currentUser.publicKey);
+				DatagramPacket datagram = new DatagramPacket(intro,intro.length,group,port); 
+				socket.send(datagram);
 				// System.out.println("Start typing messages...\n"); 
-				while(true) 
-				{ 
+				while(running){ 
 					// String message; 
 					// message = sc.nextLine(); 
 					// if(message.equalsIgnoreCase(Communication.TERMINATE)) 
@@ -48,6 +58,50 @@ class Main{
 					// 	break; 
 					// }
 
+					if(currentUser.firstUser){
+						if((int)channel.get(0) == Message.intro){
+							System.out.println("welcome "+(String)channel.get(1));
+							newuser = false;
+							ArrayList<BigInteger> temp = new ArrayList<>();
+							temp.add( (BigInteger)channel.get(2));
+							temp.add((BigInteger)channel.get(3));
+							temp.add((BigInteger)channel.get(4));
+							currentUser.usernameToPublicKey.put((String)channel.get(1),temp);
+
+							byte[] welkum = m.welcomeUser((String)channel.get(1), currentUser.usernameToPublicKey, currentUser.blockchain, currentUser.currentBuffer);
+							datagram = new DatagramPacket(welkum,welkum.length,group,port); 
+							socket.send(datagram);
+						}
+						if(currentUser.usernameToPublicKey.size() == 1){
+							System.out.println("I'm lonely");
+						}
+						else{
+							break;
+						}
+						// System.out.println("Not anymore");
+					}
+					else{
+						if(newuser){
+							if(((String)channel.get(1)).compareTo(currentUser.username) != 0){
+								System.out.println("I welcome the new user");
+								try{
+									Thread.sleep(100);
+								}
+								catch(InterruptedException e){
+									e.printStackTrace();
+								}
+								newuser = false;
+							}
+							else{
+								System.out.println("I am inducted");
+								currentUser.usernameToPublicKey = (HashMap<String,ArrayList<BigInteger>>)channel.get(2);
+								currentUser.blockchain = (Blockchain)channel.get(3);
+								currentUser.currentBuffer = (ArrayList<Transaction>)channel.get(4);
+								newuser = false;
+								break;	
+							}
+						}
+					}
 					
 					/** application logic
 					 * The first user waits for a registration before producing his transactions
@@ -90,13 +144,14 @@ class Main{
 					*/
 
 					
-					// message = name + ": " + message; 
-					Message m = new Message();
-					byte[] send = m.introduceUser("username", new BigInteger("2"), new BigInteger("97"), new BigInteger("101")); 
-					DatagramPacket datagram = new DatagramPacket(send,send.length,group,port); 
-					socket.send(datagram); 
-					scan.close();
+					// message = name + ": " + message;
+					// this here contains a way to send a message 
+					// Message m = new Message();
+					// byte[] send = m.introduceUser("username", new BigInteger("2"), new BigInteger("97"), new BigInteger("101")); 
+					// DatagramPacket datagram = new DatagramPacket(send,send.length,group,port); 
+					// socket.send(datagram); 
 				} 
+				scan.close();
 			} 
 			catch(SocketException se) 
 			{ 
@@ -151,42 +206,3 @@ class Main{
 
 }
 
-class ReadThread implements Runnable 
-{ 
-	private MulticastSocket socket; 
-	private InetAddress group; 
-	private int port; 
-	private static final int MAX_LEN = 1000;
-	String name; 
-	ReadThread(String name, MulticastSocket socket,InetAddress group,int port) 
-	{ 
-		this.name = name;
-		this.socket = socket; 
-		this.group = group; 
-		this.port = port; 
-	} 
-	
-	@Override
-	public void run() 
-	{ 
-		while(!Communication.finished) 
-		{ 
-				byte[] buffer = new byte[ReadThread.MAX_LEN]; 
-				DatagramPacket datagram = new
-				DatagramPacket(buffer,buffer.length,group,port); 
-			try
-			{ 
-				Message m = new Message();
-				socket.receive(datagram); 
-				ArrayList<Object> message = m.unWrapMessage(buffer); //new String(buffer,0,datagram.getLength(),"UTF-8"); 
-				// if(!message.startsWith(Communication.name)) dislplay only others' messages
-				System.out.println("recieved by "+name+" "+message); 
-
-			} 
-			catch(Exception e) 
-			{ 
-				System.out.println("Socket closed!"); 
-			} 
-		} 
-	} 
-}

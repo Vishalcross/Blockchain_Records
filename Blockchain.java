@@ -1,5 +1,7 @@
+import java.io.Serializable;
 import java.util.ArrayList;
-class Blockchain{
+class Blockchain implements Serializable{
+	private static final long serialVersionUID = 6008132331540391693L;
 	ArrayList<Block> blockchain;
 	int difficulty;
 	public Blockchain(int difficulty, int limit){

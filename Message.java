@@ -27,7 +27,8 @@ class Message{
     byte[] wrapMessage() throws IOException{
         try(ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutput out = new ObjectOutputStream(bos)){
-            out.writeObject(this.message);
+            System.out.println(this.message);
+            out.writeObject((Object)this.message);
             this.message.clear();
             return bos.toByteArray();
         }
@@ -61,7 +62,7 @@ class Message{
      * put them in one message
      */
 
-    byte[] welcomeUser(String reciever, HashMap<String,BigInteger> userTable, ArrayList<Block> blockchain, ArrayList<Transaction> currentBuffer) throws IOException{
+    byte[] welcomeUser(String reciever, HashMap<String,ArrayList<BigInteger>> userTable, Blockchain blockchain, ArrayList<Transaction> currentBuffer) throws IOException{
         // ArrayList<Object> message = new ArrayList<>();
         this.message.add(welcome);
         // this.message.add(sender);
