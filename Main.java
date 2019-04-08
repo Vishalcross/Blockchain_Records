@@ -8,7 +8,7 @@ class Main{
 	public static boolean newuser = false;
 	// public static boolean welcome = false; 
 	static boolean running = true;
-	static ArrayList<Object> channel;
+	static ArrayList<Object> channel = new ArrayList<>();
 	public static void main(String[] args) {
 		try
 			{ 
@@ -46,7 +46,6 @@ class Main{
 				byte[] intro = m.introduceUser(uname, currentUser.group.generator, currentUser.group.prime, currentUser.publicKey);
 				DatagramPacket datagram = new DatagramPacket(intro,intro.length,group,port); 
 				socket.send(datagram);
-				// System.out.println("Start typing messages...\n"); 
 				while(running){ 
 					// String message; 
 					// message = sc.nextLine(); 
@@ -57,48 +56,65 @@ class Main{
 					// 	socket.close(); 
 					// 	break; 
 					// }
-
-					if(currentUser.firstUser){
-						if((int)channel.get(0) == Message.intro){
-							System.out.println("welcome "+(String)channel.get(1));
-							newuser = false;
-							ArrayList<BigInteger> temp = new ArrayList<>();
-							temp.add( (BigInteger)channel.get(2));
-							temp.add((BigInteger)channel.get(3));
-							temp.add((BigInteger)channel.get(4));
-							currentUser.usernameToPublicKey.put((String)channel.get(1),temp);
-
-							byte[] welkum = m.welcomeUser((String)channel.get(1), currentUser.usernameToPublicKey, currentUser.blockchain, currentUser.currentBuffer);
-							datagram = new DatagramPacket(welkum,welkum.length,group,port); 
-							socket.send(datagram);
-						}
-						if(currentUser.usernameToPublicKey.size() == 1){
-							System.out.println("I'm lonely");
-						}
-						else{
-							break;
-						}
-						// System.out.println("Not anymore");
-					}
-					else{
-						if(newuser){
-							if(((String)channel.get(1)).compareTo(currentUser.username) != 0){
-								System.out.println("I welcome the new user");
-								try{
-									Thread.sleep(100);
+					System.out.println("Start typing messages...\n");
+					if(channel.size() > 0){
+						if(currentUser.firstUser){
+							if(currentUser.usernameToPublicKey.size() == 1){
+								System.out.println("I'm lonely");
+							}
+							if((int)channel.get(0) == Message.intro){
+								if(((String)channel.get(1)).compareTo(currentUser.username) != 0){
+									System.out.println("welcome "+(String)channel.get(1));
+									newuser = false;
+									ArrayList<BigInteger> temp = new ArrayList<>();
+									temp.add( (BigInteger)channel.get(2));
+									temp.add((BigInteger)channel.get(3));
+									temp.add((BigInteger)channel.get(4));
+									currentUser.usernameToPublicKey.put((String)channel.get(1),temp);
+		
+									byte[] welkum = m.welcomeUser((String)channel.get(1), currentUser.usernameToPublicKey, currentUser.blockchain, currentUser.currentBuffer);
+									datagram = new DatagramPacket(welkum,welkum.length,group,port); 
+									socket.send(datagram);
+									break;
 								}
-								catch(InterruptedException e){
-									e.printStackTrace();
+								else{
+									System.out.println("LET IT RIP");
 								}
-								newuser = false;
 							}
 							else{
-								System.out.println("I am inducted");
-								currentUser.usernameToPublicKey = (HashMap<String,ArrayList<BigInteger>>)channel.get(2);
-								currentUser.blockchain = (Blockchain)channel.get(3);
-								currentUser.currentBuffer = (ArrayList<Transaction>)channel.get(4);
-								newuser = false;
-								break;	
+								// break;
+							}
+							// System.out.println("Not anymore");
+						}
+						else{
+							if((int)channel.get(0) == Message.intro){
+								if(((String)channel.get(1)).compareTo(currentUser.username) != 0){
+									//System.out.println("I welcome the new user");
+									try{
+										Thread.sleep(100);
+									}
+									catch(InterruptedException e){
+										e.printStackTrace();
+									}
+								}
+							}
+							else if((int)channel.get(0) == Message.welcome){
+								if(((String)channel.get(1)).compareTo(currentUser.username) == 0){
+									System.out.println("I am inducted");
+									currentUser.usernameToPublicKey = (HashMap<String,ArrayList<BigInteger>>)channel.get(2);
+									currentUser.blockchain = (Blockchain)channel.get(3);
+									currentUser.currentBuffer = (ArrayList<Transaction>)channel.get(4);
+									break;
+								}
+								else{
+									System.out.println("I welcome the new user");
+									try{
+										Thread.sleep(100);
+									}
+									catch(InterruptedException e){
+										e.printStackTrace();
+									}
+								}
 							}
 						}
 					}
