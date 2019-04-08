@@ -28,6 +28,10 @@ class Main{
 				System.out.println("Welcome " +uname+", would you like to manually enter the criminal records or have a random insertion\nPress y for manual input and n for random");
 				name = uname;
 				char choice = (scan.nextLine()).charAt(0);
+
+				if(choice!='y' || choice!='n')
+					System.out.println("SShould select y or n");
+
 				MulticastSocket socket = new MulticastSocket(port); 
 				
 				// Since we are deploying 
@@ -66,7 +70,6 @@ class Main{
 								readyForTransaction = false;
 								if(((String)channel.get(1)).compareTo(currentUser.username) != 0){
 									System.out.println("welcome "+(String)channel.get(1));
-									newuser = false;
 									ArrayList<BigInteger> temp = new ArrayList<>();
 									temp.add( (BigInteger)channel.get(2));
 									temp.add((BigInteger)channel.get(3));
@@ -85,18 +88,108 @@ class Main{
 							else if((int)channel.get(0) == Message.welcome){
 								// break;
 								readyForTransaction = true;
-								Thread.sleep(100);
+								try{
+									Thread.sleep(100);
+								}
+								catch(InterruptedException e){
+									e.printStackTrace();
+								}
 							}
+							else if((int)channel.get(0) == Message.transactionContainer){
+								System.out.printf("");
+							}
+
+							else if((int)channel.get(0) == Message.verificationReply){
+								System.out.println((boolean)channel.get(3)?"Validated":"Not Validated");
+								break;
+							}
+
 							if(readyForTransaction){
+								if(choice == 'y'){
+									System.out.println("enter the ID number of criminal.");
+									int idNo=scan.nextInt();	
+									String junk = scan.nextLine();							
+									System.out.println("enter the details of the crime");
+									String crimeDetails = scan.nextLine();
+									Transaction newTransaction = new Transaction(idNo, crimeDetails);
+
+									Random newRandomNumber = new Random();
+									BigInteger randNo=new BigInteger(""+newRandomNumber.nextInt(100));
+									//m x (mod p), m r (mod p), A r (mod p);
+									String temp = newTransaction.getHash();
+									BigInteger msg = new BigInteger(temp,16);
+
+									BigInteger alpha = msg.modPow(currentUser.privateKey,currentUser.group.prime);
+									BigInteger beta = msg.modPow(randNo,currentUser.group.prime);
+									BigInteger gamma = currentUser.group.generator.modPow(randNo,currentUser.group.prime);
+									BigInteger c = new BigInteger(StringUtil.applySha256(""+alpha.toString()+beta.toString()+gamma.toString()),16);
+									c = c.multiply(currentUser.privateKey);
+									BigInteger s = c.add(randNo);
+
+									byte[] newByte = m.transactionContainer(currentUser.username,newTransaction,s,alpha,beta,gamma);
+
+									System.out.println("should I send?");
+									String somethingRandom = scan.nextLine();
+
+									datagram = new DatagramPacket(newByte,newByte.length,group,port); 
+									socket.send(datagram);
+									readyForTransaction = false;
+									System.out.println("Message sent for verification");
+
+								}
 
 							}
 							// System.out.println("Not anymore");
 						}
 						else{
+							if(readyForTransaction){
+								if((int)channel.get(0) == Message.transactionContainer){
+									readyForTransaction = false;
+								}
+								else{
+									if(choice == 'y'){
+										System.out.println("enter the ID number of criminal.");
+										int idNo=scan.nextInt();
+										String junk = scan.nextLine();								
+										System.out.println("enter the details of the crime");
+										String crimeDetails = scan.nextLine();
+										if((int)channel.get(0) == Message.transactionContainer){
+											System.out.println("There is a transaction pending in the pipeline");
+											readyForTransaction = false;
+											continue;
+										}
+										Transaction newTransaction = new Transaction(idNo, crimeDetails);
+
+										Random newRandomNumber = new Random();
+										BigInteger randNo=new BigInteger(""+newRandomNumber.nextInt(100));
+										//m x (mod p), m r (mod p), A r (mod p);
+										String temp = newTransaction.getHash();
+										BigInteger msg = new BigInteger(temp,16);
+
+										BigInteger alpha = msg.modPow(currentUser.privateKey,currentUser.group.prime);
+										BigInteger beta = msg.modPow(randNo,currentUser.group.prime);
+										BigInteger gamma = currentUser.group.generator.modPow(randNo,currentUser.group.prime);
+										BigInteger c = new BigInteger(StringUtil.applySha256(""+alpha.toString()+beta.toString()+gamma.toString()),16);
+										c = c.multiply(currentUser.privateKey);
+										BigInteger s = c.add(randNo);
+
+										byte[] newByte = m.transactionContainer(currentUser.username,newTransaction,s,alpha,beta,gamma);
+
+										System.out.println("should I send?");
+										String somethingRandom = scan.nextLine();
+
+										datagram = new DatagramPacket(newByte,newByte.length,group,port); 
+										socket.send(datagram);
+										readyForTransaction = false;
+										System.out.println("Message sent for verification");
+									}
+								}
+							}
 							if((int)channel.get(0) == Message.intro){
 								if(((String)channel.get(1)).compareTo(currentUser.username) != 0){
 									//System.out.println("I welcome the new user");
 									try{
+										readyForTransaction = false;
 										Thread.sleep(100);
 									}
 									catch(InterruptedException e){
@@ -111,17 +204,30 @@ class Main{
 									currentUser.blockchain = (Blockchain)channel.get(3);
 									currentUser.currentBuffer = (ArrayList<Transaction>)channel.get(4);
 									// break;
+									readyForTransaction = true;
 								}
 								else{
 									System.out.println("I welcome the new user");
 									currentUser.usernameToPublicKey = (HashMap<String,ArrayList<BigInteger>>)channel.get(2);
 									try{
+										readyForTransaction = true;
 										Thread.sleep(100);
 									}
 									catch(InterruptedException e){
 										e.printStackTrace();
 									}
 								}
+							}
+							else if((int)channel.get(0) == Message.transactionContainer){
+								boolean isVerified = currentUser.verifyTransaction(channel);
+								byte[] reply = m.transactionVerificationReply(currentUser.username, (String)channel.get(1),isVerified);
+								datagram = new DatagramPacket(reply,reply.length,group,port); 
+								socket.send(datagram);
+								System.out.println(isVerified?"Valid":"Not valid");
+							}
+							else if((int)channel.get(0) == Message.verificationReply){
+								readyForTransaction = true;
+								break;
 							}
 						}
 					}
