@@ -5,7 +5,7 @@ import java.io.*;
 import java.math.BigInteger;
 class Main{
 	public static String name;
-	public static boolean newuser = false;
+	public static boolean readyForTransaction = false;
 	// public static boolean welcome = false; 
 	static boolean running = true;
 	static ArrayList<Object> channel = new ArrayList<>();
@@ -63,6 +63,7 @@ class Main{
 								System.out.println("I'm lonely");
 							}
 							if((int)channel.get(0) == Message.intro){
+								readyForTransaction = false;
 								if(((String)channel.get(1)).compareTo(currentUser.username) != 0){
 									System.out.println("welcome "+(String)channel.get(1));
 									newuser = false;
@@ -75,14 +76,19 @@ class Main{
 									byte[] welkum = m.welcomeUser((String)channel.get(1), currentUser.usernameToPublicKey, currentUser.blockchain, currentUser.currentBuffer);
 									datagram = new DatagramPacket(welkum,welkum.length,group,port); 
 									socket.send(datagram);
-									break;
+									// break;
 								}
 								else{
 									System.out.println("LET IT RIP");
 								}
 							}
-							else{
+							else if((int)channel.get(0) == Message.welcome){
 								// break;
+								readyForTransaction = true;
+								Thread.sleep(100);
+							}
+							if(readyForTransaction){
+
 							}
 							// System.out.println("Not anymore");
 						}
@@ -104,10 +110,11 @@ class Main{
 									currentUser.usernameToPublicKey = (HashMap<String,ArrayList<BigInteger>>)channel.get(2);
 									currentUser.blockchain = (Blockchain)channel.get(3);
 									currentUser.currentBuffer = (ArrayList<Transaction>)channel.get(4);
-									break;
+									// break;
 								}
 								else{
 									System.out.println("I welcome the new user");
+									currentUser.usernameToPublicKey = (HashMap<String,ArrayList<BigInteger>>)channel.get(2);
 									try{
 										Thread.sleep(100);
 									}
