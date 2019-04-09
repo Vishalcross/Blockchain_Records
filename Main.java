@@ -171,6 +171,9 @@ class Main{
 						else if((int)channel.get(0) == Message.storeTransaction){
 							ArrayList<Object> channel1 = channel;
 							System.out.println("I am storing this transaction");
+							if(((String)channel.get(1)).comapareTo(currentUser.username) == 0){
+								currentUser.passBook.add((Transaction)channel1.get(2));
+							}
 							currentUser.currentBuffer.block.add((Transaction)channel1.get(2));
 							System.out.println("Current buffer size is "+currentUser.currentBuffer.block.size());
 							try{
@@ -390,6 +393,9 @@ class Main{
 						else if((int)channel.get(0) == Message.storeTransaction){
 							ArrayList<Object> channel1 = channel;
 							System.out.println("I am storing this transaction");
+							if(((String)channel.get(1)).comapareTo(currentUser.username) == 0){
+								currentUser.passBook.add((Transaction)channel1.get(2));
+							}
 							currentUser.currentBuffer.addTransaction((Transaction)channel1.get(2));
 							System.out.println("Current buffer size is "+currentUser.currentBuffer.block.size());
 							try{
