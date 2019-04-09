@@ -58,6 +58,11 @@ class Main{
 							if(choice == 'y'){
 								System.out.println("enter the ID number of criminal.");
 								int idNo=scan.nextInt();	
+								if((int)channel.get(0) == Message.transactionContainer){
+									System.out.println("There is another transaction in the pipeline");
+									readyForTransaction = false;
+									continue;
+								}
 								String junk = scan.nextLine();							
 								System.out.println("enter the details of the crime");
 								String crimeDetails = scan.nextLine();
@@ -88,9 +93,14 @@ class Main{
 								datagram = new DatagramPacket(newByte,newByte.length,group,port); 
 								socket.send(datagram);
 								tempTransaction = newTransaction;
-								System.out.println("Message sent for verification");
 								readyForTransaction = false;
-
+								System.out.println("Message sent for verification");
+								try{
+									Thread.sleep(100);
+								}
+								catch(InterruptedException e){
+									e.printStackTrace();
+								}
 							}
 
 						}
@@ -100,26 +110,28 @@ class Main{
 						}
 
 						if((int)channel.get(0) == Message.intro){
+							ArrayList<Object> channel1 = channel;
 							readyForTransaction = false;
-							if(((String)channel.get(1)).compareTo(currentUser.username) != 0){
-								System.out.println("welcome "+(String)channel.get(1));
+							if(((String)channel1.get(1)).compareTo(currentUser.username) != 0){
+								System.out.println("welcome "+(String)channel1.get(1));
 								ArrayList<BigInteger> temp = new ArrayList<>();
-								temp.add( (BigInteger)channel.get(2));
-								temp.add((BigInteger)channel.get(3));
-								temp.add((BigInteger)channel.get(4));
-								currentUser.usernameToPublicKey.put((String)channel.get(1),temp);
+								temp.add( (BigInteger)channel1.get(2));
+								temp.add((BigInteger)channel1.get(3));
+								temp.add((BigInteger)channel1.get(4));
+								currentUser.usernameToPublicKey.put((String)channel1.get(1),temp);
 	
-								byte[] welkum = m.welcomeUser((String)channel.get(1), currentUser.usernameToPublicKey, currentUser.blockchain, currentUser.currentBuffer);
+								byte[] welkum = m.welcomeUser((String)channel1.get(1), currentUser.usernameToPublicKey, currentUser.blockchain, currentUser.currentBuffer);
 								datagram = new DatagramPacket(welkum,welkum.length,group,port); 
 								socket.send(datagram);
 								// break;
 							}
 							else{
-								System.out.println("LET IT RIP");
+								System.out.print("");
 							}
 						}
 						else if((int)channel.get(0) == Message.welcome){
 							// break;
+							System.out.println("SOMETHING WRONG");
 							readyForTransaction = true;
 							try{
 								Thread.sleep(100);
@@ -129,16 +141,23 @@ class Main{
 							}
 						}
 						else if((int)channel.get(0) == Message.transactionContainer){
-							boolean isVerified = currentUser.verifyTransaction(channel);
-							byte[] reply = m.transactionVerificationReply(currentUser.username, (String)channel.get(1),isVerified);
-							datagram = new DatagramPacket(reply,reply.length,group,port); 
-							socket.send(datagram);
-							System.out.println(isVerified?"Valid":"Not valid");
+							ArrayList<Object> channel1 = channel;
+							if(((String)channel1.get(1)).compareTo(currentUser.username) != 0){
+								boolean isVerified = currentUser.verifyTransaction(channel1);
+								byte[] reply = m.transactionVerificationReply(currentUser.username, (String)channel1.get(1),isVerified);
+								datagram = new DatagramPacket(reply,reply.length,group,port); 
+								socket.send(datagram);
+								System.out.println(isVerified?"Valid":"Not valid");
+							}
+							else{
+								System.out.println("Waiting for verification");
+							}
 						}
 
 						else if((int)channel.get(0) == Message.verificationReply){
-							System.out.println((boolean)channel.get(3)?"Validated":"Not Validated");
-							if((boolean)channel.get(3)){
+							ArrayList<Object> channel1 = channel;
+							System.out.println((boolean)channel1.get(3)?"Validated":"Not Validated");
+							if((boolean)channel1.get(3)){
 								byte[] reply = m.storeTransactionNow(currentUser.username, tempTransaction);
 								datagram = new DatagramPacket(reply,reply.length,group,port); 
 								socket.send(datagram);
@@ -150,47 +169,68 @@ class Main{
 						}
 
 						else if((int)channel.get(0) == Message.storeTransaction){
+							ArrayList<Object> channel1 = channel;
 							System.out.println("I am storing this transaction");
-							readyForTransaction = true;
-							currentUser.currentBuffer.block.add((Transaction)channel.get(2));
-							if(currentUser.currentBuffer.block.size() == currentUser.blockchain.limit){
+							currentUser.currentBuffer.block.add((Transaction)channel1.get(2));
+							System.out.println("Current buffer size is "+currentUser.currentBuffer.block.size());
+							try{
+								Thread.sleep(100);
+							}
+							catch(InterruptedException e){
+								e.printStackTrace();
+							}
+							if(currentUser.currentBuffer.block.size() >= currentUser.blockchain.limit){
 								readyForTransaction = false;
 								System.out.println("MINING");
 								int nonce = currentUser.mineBlock();
 								if((int)channel.get(0) == Message.hashMined){
 									System.out.println("Already mined");
-									continue;
 								}
 								else{
 									byte[] reply = m.hashMinedInfo(currentUser.username, nonce);
 									datagram = new DatagramPacket(reply,reply.length,group,port);
 									socket.send(datagram);
 								}
+								continue;
 							}
+							readyForTransaction = true;
 						}
 
 						else if((int)channel.get(0) == Message.hashMined){
-							if(((String)channel.get(1)).compareTo(currentUser.username) != 0){
-								boolean valid = currentUser.verifyMining((int)channel.get(2));
+							ArrayList<Object> channel1 = channel;
+							if(((String)channel1.get(1)).compareTo(currentUser.username) != 0){
+								boolean valid = currentUser.verifyMining((int)channel1.get(2));
 								System.out.println("Hash "+(valid?"valid":"invalid"));
-								byte[] reply = m.hashVerified(currentUser.username, (String)channel.get(1), valid,(int)channel.get(2));
+								byte[] reply = m.hashVerified(currentUser.username, (String)channel1.get(1), valid,(int)channel1.get(2));
 								datagram = new DatagramPacket(reply,reply.length,group,port);
 								socket.send(datagram);
+								if(!valid){
+									System.out.println("MINING");
+									readyForTransaction = false;
+									int nonce = currentUser.mineBlock();
+									reply = m.hashMinedInfo(currentUser.username, nonce);
+									datagram = new DatagramPacket(reply,reply.length,group,port);
+									socket.send(datagram);
+								}
 							}
 						}
 
 						else if((int)channel.get(0) == Message.hashVerified){
-							if(((String)channel.get(2)).compareTo(currentUser.username) == 0){
+							ArrayList<Object> channel1 = channel;
+							if(((String)channel1.get(2)).compareTo(currentUser.username) == 0){
 								// increment the number of Valid replies
-								if((boolean)channel.get(3)){
+								if((boolean)channel1.get(3)){
+									System.out.println("The block was valid");
 									String data = "";
 									for(int i=0;i<currentUser.currentBuffer.block.size();i++){
 										data += currentUser.currentBuffer.block.get(i).getString();
 									}
 									currentUser.currentBuffer.previousHash = currentUser.blockchain.getLastHash();
-									currentUser.currentBuffer.hash = StringUtil.applySha256(currentUser.blockchain.getLastHash() + Integer.toString((int)channel.get(4)) + data);
-									currentUser.currentBuffer.nonce = (int)channel.get(4);
+									currentUser.currentBuffer.hash = StringUtil.applySha256(currentUser.blockchain.getLastHash() + Integer.toString((int)channel1.get(4)) + data);
+									currentUser.currentBuffer.nonce = (int)channel1.get(4);
 									currentUser.blockchain.addBlock(currentUser.currentBuffer);
+									System.out.println("Added the new block, now sending it");
+									currentUser.currentBuffer.printBlock();
 									byte[] reply = m.newBlockchain(currentUser.username, currentUser.blockchain);
 									datagram = new DatagramPacket(reply,reply.length,group,port);
 									socket.send(datagram);
@@ -198,17 +238,32 @@ class Main{
 								}
 								else{
 									System.out.println("The block was invalid");
-									readyForTransaction = true;
+									readyForTransaction = false;
+									System.out.println("MINING");
+									int nonce = currentUser.mineBlock();
+									if((int)channel1.get(0) == Message.hashMined){
+										System.out.println("Already mined");
+										continue;
+									}
+									else{
+										byte[] reply = m.hashMinedInfo(currentUser.username, nonce);
+										datagram = new DatagramPacket(reply,reply.length,group,port);
+										socket.send(datagram);
+										continue;
+									}
 								}
 							}
 						}
 
 						else if((int)channel.get(0) == Message.newBlockchain){
-							readyForTransaction = true;
+							ArrayList<Object> channel1 = channel;
+							currentUser.currentBuffer.block.clear();
 							System.out.println("The new block is added");
-							if(((String)channel.get(1)).compareTo(currentUser.username) != 0){
-								currentUser.blockchain = (Blockchain)channel.get(2);
+							if(((String)channel1.get(1)).compareTo(currentUser.username) != 0){
+								currentUser.blockchain = (Blockchain)channel1.get(2);
 							}
+							currentUser.blockchain.printChain();
+							readyForTransaction = true;
 						}
 
 						// System.out.println("Not anymore");
@@ -224,17 +279,17 @@ class Main{
 								if(choice == 'y'){
 									System.out.println("enter the ID number of criminal.");
 									int idNo=scan.nextInt();
-									String junk = scan.nextLine();								
-									System.out.println("enter the details of the crime");
-									String crimeDetails = scan.nextLine();
 									if((int)channel.get(0) == Message.transactionContainer){
 										System.out.println("There is a transaction pending in the pipeline");
 										readyForTransaction = false;
 										continue;
 									}
-									if((int)channel.get(0) == Message.hashMined){
+									String junk = scan.nextLine();								
+									System.out.println("enter the details of the crime");
+									String crimeDetails = scan.nextLine();
+									// if((int)channel.get(0) == Message.hashMined){
 
-									}
+									// }
 									Transaction newTransaction = new Transaction(idNo, crimeDetails);
 
 									Random newRandomNumber = new Random();
@@ -259,12 +314,19 @@ class Main{
 									socket.send(datagram);
 									readyForTransaction = false;
 									System.out.println("Message sent for verification");
+									try{
+										Thread.sleep(100);
+									}
+									catch(InterruptedException e){
+										e.printStackTrace();
+									}
 								}
 							}
 						}
 						if((int)channel.get(0) == Message.intro){
-							if(((String)channel.get(1)).compareTo(currentUser.username) != 0){
-								// System.out.println("I welcome the new user");
+							ArrayList<Object> channel1 = channel;
+							if(((String)channel1.get(1)).compareTo(currentUser.username) != 0){
+								System.out.println("I welcome the new user");
 								try{
 									readyForTransaction = false;
 									Thread.sleep(100);
@@ -275,17 +337,18 @@ class Main{
 							}
 						}
 						else if((int)channel.get(0) == Message.welcome){
-							if(((String)channel.get(1)).compareTo(currentUser.username) == 0){
+							ArrayList<Object> channel1 = channel;
+							if(((String)channel1.get(1)).compareTo(currentUser.username) == 0){
 								System.out.println("I am inducted");
-								currentUser.usernameToPublicKey = (HashMap<String,ArrayList<BigInteger>>)channel.get(2);
-								currentUser.blockchain = (Blockchain)channel.get(3);
-								currentUser.currentBuffer = (Block)channel.get(4);
+								currentUser.usernameToPublicKey = (HashMap<String,ArrayList<BigInteger>>)channel1.get(2);
+								currentUser.blockchain = (Blockchain)channel1.get(3);
+								currentUser.currentBuffer = (Block)channel1.get(4);
 								// break;
 								readyForTransaction = true;
 							}
 							else{
 								System.out.println("I welcome the new user");
-								currentUser.usernameToPublicKey = (HashMap<String,ArrayList<BigInteger>>)channel.get(2);
+								currentUser.usernameToPublicKey = (HashMap<String,ArrayList<BigInteger>>)channel1.get(2);
 								try{
 									readyForTransaction = true;
 									Thread.sleep(100);
@@ -297,16 +360,23 @@ class Main{
 						}
 
 						else if((int)channel.get(0) == Message.transactionContainer){
-							boolean isVerified = currentUser.verifyTransaction(channel);
-							byte[] reply = m.transactionVerificationReply(currentUser.username, (String)channel.get(1),isVerified);
-							datagram = new DatagramPacket(reply,reply.length,group,port); 
-							socket.send(datagram);
-							System.out.println(isVerified?"Valid":"Not valid");
+							ArrayList<Object> channel1 = channel;
+							if(((String)channel1.get(1)).compareTo(currentUser.username) != 0){
+								boolean isVerified = currentUser.verifyTransaction(channel1);
+								byte[] reply = m.transactionVerificationReply(currentUser.username, (String)channel1.get(1),isVerified);
+								datagram = new DatagramPacket(reply,reply.length,group,port); 
+								socket.send(datagram);
+								System.out.println(isVerified?"Valid":"Not valid");
+							}
+							else{
+								System.out.println("Waiting for verification");
+							}
 						}
 
 						else if((int)channel.get(0) == Message.verificationReply){
-							System.out.println((boolean)channel.get(3)?"Validated":"Not Validated");
-							if((boolean)channel.get(3)){
+							ArrayList<Object> channel1 = channel;
+							System.out.println((boolean)channel1.get(3)?"Validated":"Not Validated");
+							if((boolean)channel1.get(3)){
 								byte[] reply = m.storeTransactionNow(currentUser.username, tempTransaction);
 								datagram = new DatagramPacket(reply,reply.length,group,port); 
 								socket.send(datagram);
@@ -318,14 +388,21 @@ class Main{
 						}
 
 						else if((int)channel.get(0) == Message.storeTransaction){
+							ArrayList<Object> channel1 = channel;
 							System.out.println("I am storing this transaction");
-							readyForTransaction = true;
-							currentUser.currentBuffer.block.add((Transaction)channel.get(2));
-							if(currentUser.currentBuffer.block.size() == currentUser.blockchain.limit){
+							currentUser.currentBuffer.addTransaction((Transaction)channel1.get(2));
+							System.out.println("Current buffer size is "+currentUser.currentBuffer.block.size());
+							try{
+								Thread.sleep(100);
+							}
+							catch(InterruptedException e){
+								e.printStackTrace();
+							}
+							if(currentUser.currentBuffer.block.size() >= currentUser.blockchain.limit){
 								readyForTransaction = false;
 								System.out.println("MINING");
 								int nonce = currentUser.mineBlock();
-								if((int)channel.get(0) == Message.hashMined){
+								if((int)channel1.get(0) == Message.hashMined){
 									System.out.println("Already mined");
 									continue;
 								}
@@ -333,50 +410,81 @@ class Main{
 									byte[] reply = m.hashMinedInfo(currentUser.username, nonce);
 									datagram = new DatagramPacket(reply,reply.length,group,port);
 									socket.send(datagram);
+									continue;
+								}
+							}
+							readyForTransaction = true;
+						}
+
+						else if((int)channel.get(0) == Message.hashMined){
+							ArrayList<Object> channel1 = channel;
+							if(((String)channel1.get(1)).compareTo(currentUser.username) != 0){
+								boolean valid = currentUser.verifyMining((int)channel1.get(2));
+								System.out.println("Hash "+(valid?"valid":"invalid"));
+								byte[] reply = m.hashVerified(currentUser.username, (String)channel1.get(1), valid,(int)channel1.get(2));
+								datagram = new DatagramPacket(reply,reply.length,group,port);
+								socket.send(datagram);
+								if(!valid){
+									System.out.println("MINING");
+									readyForTransaction = false;
+									int nonce = currentUser.mineBlock();
+									reply = m.hashMinedInfo(currentUser.username, nonce);
+									datagram = new DatagramPacket(reply,reply.length,group,port);
+									socket.send(datagram);
 								}
 							}
 						}
 
-						else if((int)channel.get(0) == Message.hashMined){
-							if(((String)channel.get(1)).compareTo(currentUser.username) != 0){
-								boolean valid = currentUser.verifyMining((int)channel.get(2));
-								System.out.println("Hash "+(valid?"valid":"invalid"));
-								byte[] reply = m.hashVerified(currentUser.username, (String)channel.get(1), valid,(int)channel.get(2));
-								datagram = new DatagramPacket(reply,reply.length,group,port);
-								socket.send(datagram);
-							}
-						}
-
 						else if((int)channel.get(0) == Message.hashVerified){
-							if(((String)channel.get(2)).compareTo(currentUser.username) == 0){
+							ArrayList<Object> channel1 = channel;
+							if(((String)channel1.get(2)).compareTo(currentUser.username) == 0){
 								// increment the number of Valid replies
-								if((boolean)channel.get(3)){
+								if((boolean)channel1.get(3)){
+									System.out.println("The block was valid");
 									String data = "";
 									for(int i=0;i<currentUser.currentBuffer.block.size();i++){
 										data += currentUser.currentBuffer.block.get(i).getString();
 									}
 									currentUser.currentBuffer.previousHash = currentUser.blockchain.getLastHash();
-									currentUser.currentBuffer.hash = StringUtil.applySha256(currentUser.blockchain.getLastHash() + Integer.toString((int)channel.get(4)) + data);
-									currentUser.currentBuffer.nonce = (int)channel.get(4);
+									currentUser.currentBuffer.hash = StringUtil.applySha256(currentUser.blockchain.getLastHash() + Integer.toString((int)channel1.get(4)) + data);
+									currentUser.currentBuffer.nonce = (int)channel1.get(4);
 									currentUser.blockchain.addBlock(currentUser.currentBuffer);
+									System.out.println("Added the new block, now sending it");
+									currentUser.currentBuffer.printBlock();
 									byte[] reply = m.newBlockchain(currentUser.username, currentUser.blockchain);
 									datagram = new DatagramPacket(reply,reply.length,group,port);
 									socket.send(datagram);
 									currentUser.currentBuffer.block.clear();
 								}
-							}
-							else{
-								System.out.println("The block was invalid");
-								readyForTransaction = true;
+								else{
+									System.out.println("The block was invalid");
+									readyForTransaction = false;
+									System.out.println("MINING");
+									int nonce = currentUser.mineBlock();
+									if((int)channel1.get(0) == Message.hashMined){
+										System.out.println("Already mined");
+										continue;
+									}
+									else{
+										byte[] reply = m.hashMinedInfo(currentUser.username, nonce);
+										datagram = new DatagramPacket(reply,reply.length,group,port);
+										socket.send(datagram);
+										continue;
+									}
+								}
 							}
 						}
 
 						else if((int)channel.get(0) == Message.newBlockchain){
+							ArrayList<Object> channel1 = channel;
+							currentUser.currentBuffer.block.clear();
 							System.out.println("The new block is added");
+							System.out.println("My new blockchain is");
+							if(((String)channel1.get(1)).compareTo(currentUser.username) != 0){
+								currentUser.blockchain = (Blockchain)channel1.get(2);
+							}
+							currentUser.blockchain.printChain();
 							readyForTransaction = true;
-							if(((String)channel.get(1)).compareTo(currentUser.username) != 0)
-								currentUser.blockchain = (Blockchain)channel.get(2);
-							
 						}
 					}
 				}

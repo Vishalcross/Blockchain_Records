@@ -11,7 +11,12 @@ class Block implements Serializable{
 		this.limit = limit;
 		block = new ArrayList<>();
 	}
-	public void addTransacion(Transaction transaction){
+	void printBlock(){
+		for(Transaction t : block){
+			System.out.println("ID: "+t.gunah.idNo+", Crime: "+t.gunah.crime );
+		}
+	}
+	public void addTransaction(Transaction transaction){
 		block.add(transaction);
 	}
 	public String calculateHash(String previousHash, int nonce){

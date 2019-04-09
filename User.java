@@ -22,13 +22,13 @@ class User{
 		this.publicKey = this.group.generator.modPow(privateKey, group.prime);
 		if(first){
 			//handle the base case
-			this.blockchain = new Blockchain(4, 5); //initialise the blockchain
+			this.blockchain = new Blockchain(5, 3); //initialise the blockchain
 			this.usernameToPublicKey = new HashMap<>();
 			usernameToPublicKey.put(username,new ArrayList<BigInteger>());
 			usernameToPublicKey.get(username).add(this.group.generator);
 			usernameToPublicKey.get(username).add(this.group.prime);
 			usernameToPublicKey.get(username).add(this.publicKey);
-			currentBuffer = new Block(5);
+			this.currentBuffer = new Block(3);
 		}
     }
 
@@ -129,7 +129,7 @@ class User{
 		for(int i=0;i<currentBuffer.block.size();i++){
 			data += currentBuffer.block.get(i).getString();
 		}
-		String hash = "";
+		String hash = "99999999999999999999999999999999999999999";
 		while(!hash.substring(0,blockchain.difficulty).equals(target)){
 			nonce++;
 			hash = StringUtil.applySha256(blockchain.getLastHash() + Integer.toString(nonce) + data);
@@ -145,6 +145,8 @@ class User{
 			data += currentBuffer.block.get(i).getString();
 		}
 		String hash = StringUtil.applySha256(blockchain.getLastHash() + Integer.toString(nonce) + data);
+		System.out.println("Recieved nonce "+nonce);
+		System.out.println(hash);
 		if(hash.substring(0,blockchain.difficulty).equals(target)){
 			return true;
 		}

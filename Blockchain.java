@@ -20,6 +20,14 @@ class Blockchain implements Serializable{
 	void addBlock(Block b){
 		blockchain.add(b);
 	}
+	void printChain(){
+		for(Block b: blockchain){
+			System.out.println(b.hash);
+			if(b.previousHash.compareTo("0") != 0){
+				b.printBlock();
+			}
+		}	
+	}
 	boolean verifyBlockchain(){
 		Block current;
 		Block previous;
